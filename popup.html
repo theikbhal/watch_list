@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watch List - Quick Add</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #818cf8;
+      --primary-glow: rgba(129, 140, 248, 0.35);
+      --success: #34d399;
+      --accent: #ec4899;
+      --font-family: 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 320px;
+      padding: 16px;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      font-size: 14px;
+      overflow: hidden;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(to right, var(--text-main), var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 9999px;
+      background: rgba(129, 140, 248, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+
+    .video-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .video-title {
+      font-weight: 500;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: var(--text-main);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+
+    .video-url {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    select, input {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-family: var(--font-family);
+      font-size: 12px;
+      width: 100%;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: var(--font-family);
+      font-weight: 500;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
+      color: white;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      margin-top: 4px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .success-message {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: var(--success);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      text-align: center;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        <span>🎬 Watch List</span>
+      </div>
+      <div class="status-badge" id="page-type">Detecting...</div>
+    </div>
+
+    <div class="video-card">
+      <div class="video-title" id="tab-title">Loading current tab info...</div>
+      <div class="video-url" id="tab-url">Checking active webpage...</div>
+      
+      <div class="success-message" id="success-msg">
+        <span>✓ Added to your Watch List!</span>
+      </div>
+
+      <div id="add-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="timeframe">Timeframe</label>
+            <select id="timeframe">
+              <option value="today">Today</option>
+              <option value="week" selected>This Week</option>
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="year">This Year</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="priority">Priority</label>
+            <select id="priority">
+              <option value="uncategorized" selected>Uncategorized</option>
+              <option value="high">High Priority</option>
+              <option value="low">Low Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="niche">Niche / Category</label>
+          <select id="niche">
+            <option value="uncategorized" selected>General</option>
+            <option value="urgent">Urgent 🚨</option>
+            <option value="money">Make Money 💰</option>
+            <option value="relax">Relax ☕</option>
+            <option value="kids">Kids Category 🧸</option>
+            <option value="family">Family 👨‍👩‍👧‍👦</option>
+            <option value="health">Health Category 🍏</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="tags">Tags (optional, comma-separated)</label>
+          <input type="text" id="tags" placeholder="e.g. tutorial, marketing, fun">
+        </div>
+
+        <button class="btn btn-primary" id="add-btn" disabled>Add to Watch List</button>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" id="open-panel-btn">Open Side Panel Workspace</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

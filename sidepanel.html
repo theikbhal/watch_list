@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watch List - Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar: Video Library & Filters -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>🎬 Watch List</h2>
+        <span class="version-label">v1.0.0</span>
+      </div>
+
+      <!-- Add Link Section -->
+      <div class="quick-add-container">
+        <input type="text" id="paste-link-input" placeholder="Paste YouTube, X, or Instagram link...">
+        <button id="paste-add-btn" title="Add Link">+</button>
+      </div>
+
+      <!-- Tabs for Filtering -->
+      <div class="filter-section">
+        <h3>Timeframe</h3>
+        <div class="filter-pills" id="timeframe-filters">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="today">Today</button>
+          <button class="pill" data-filter="week">This Week</button>
+          <button class="pill" data-filter="month">This Month</button>
+          <button class="pill" data-filter="quarter">This Quarter</button>
+          <button class="pill" data-filter="year">This Year</button>
+        </div>
+
+        <h3>Priority</h3>
+        <div class="filter-pills" id="priority-filters">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="high">High</button>
+          <button class="pill" data-filter="low">Low</button>
+          <button class="pill" data-filter="uncategorized">Uncategorized</button>
+        </div>
+
+        <h3>Niche / Category</h3>
+        <div class="filter-pills" id="niche-filters">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="urgent">🚨 Urgent</button>
+          <button class="pill" data-filter="money">💰 Make Money</button>
+          <button class="pill" data-filter="relax">☕ Relax</button>
+          <button class="pill" data-filter="kids">🧸 Kids</button>
+          <button class="pill" data-filter="family">👨‍👩‍👧‍👦 Family</button>
+          <button class="pill" data-filter="health">🍏 Health</button>
+          <button class="pill" data-filter="uncategorized">General</button>
+        </div>
+
+        <h3>Search & Tags</h3>
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Search title, notes, or tags...">
+        </div>
+        <div class="tags-container" id="existing-tags-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <span class="active-count" id="active-video-count">0 videos</span>
+        <button id="export-import-btn" title="Backup/Restore Data">⚙️ Settings</button>
+      </div>
+
+      <!-- Video List -->
+      <div class="video-list-container">
+        <div class="list-title">Videos</div>
+        <div class="video-list" id="video-list">
+          <!-- Populated dynamically -->
+          <div class="empty-state">No videos found. Paste a link above to start!</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Welcome Panel (when no video is selected) -->
+      <div class="welcome-panel" id="welcome-panel">
+        <div class="welcome-card">
+          <h1>Welcome to Watch List 🎬</h1>
+          <p>Select a video from the sidebar or paste a link to start taking notes and scheduling your watch sessions.</p>
+          <div class="welcome-stats">
+            <div class="welcome-stat-box">
+              <span class="stat-num" id="welcome-stat-total">0</span>
+              <span class="stat-label">Total Videos</span>
+            </div>
+            <div class="welcome-stat-box">
+              <span class="stat-num" id="welcome-stat-completed">0</span>
+              <span class="stat-label">Completed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor Panel (when a video is selected) -->
+      <div class="editor-panel" id="editor-panel" style="display: none;">
+        <!-- Video Header -->
+        <header class="editor-header">
+          <div class="header-left">
+            <span class="source-badge" id="editor-source-badge">YouTube</span>
+            <h1 id="editor-title" contenteditable="true" title="Click to edit title">Video Title</h1>
+            <a href="#" target="_blank" id="editor-link" class="visit-link-btn">Open Video ↗</a>
+          </div>
+          <div class="header-right">
+            <button class="btn-action btn-delete" id="delete-video-btn" title="Delete Video">🗑️ Delete</button>
+          </div>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <nav class="nav-tabs">
+          <button class="tab-link active" data-tab="tab-notes">📝 Notes & Focus</button>
+          <button class="tab-link" data-tab="tab-details">📅 Dates & Logs</button>
+          <button class="tab-link" data-tab="tab-calendar">📆 Calendar View</button>
+          <button class="tab-link" data-tab="tab-insights">📊 Analytics Insights</button>
+        </nav>
+
+        <!-- Tab 1: Workflowy-style Notes -->
+        <section class="tab-content active" id="tab-notes">
+          <div class="notes-toolbar">
+            <!-- Breadcrumbs for Zoom out -->
+            <div class="breadcrumbs" id="note-breadcrumbs">
+              <span class="breadcrumb-item root-breadcrumb">Root Notes</span>
+            </div>
+            <div class="toolbar-actions">
+              <button id="zoom-out-btn" class="btn-small" disabled>Zoom Out 🔍-</button>
+              <button id="btn-add-tag" class="btn-small">+ Add Tag</button>
+              <button id="help-shortcuts-btn" class="btn-small" title="View keyboard shortcuts">❓ Shortcuts</button>
+            </div>
+          </div>
+
+          <!-- Video Tags Box -->
+          <div class="editor-tags-box" id="editor-tags-box">
+            <!-- Tags will render here -->
+          </div>
+
+          <!-- The nested editor list -->
+          <div class="nested-editor-container">
+            <div class="nested-editor" id="nested-notes-root">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 2: Dates & Details -->
+        <section class="tab-content" id="tab-details">
+          <div class="details-grid">
+            <!-- Scheduling Box -->
+            <div class="details-card">
+              <h2>Schedule Details</h2>
+              <div class="form-group-row">
+                <label>Timeframe</label>
+                <select id="edit-timeframe">
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+              <div class="form-group-row">
+                <label>Priority</label>
+                <select id="edit-priority">
+                  <option value="high">High Priority</option>
+                  <option value="low">Low Priority</option>
+                  <option value="uncategorized">Uncategorized</option>
+                </select>
+              </div>
+              <div class="form-group-row">
+                <label>Niche / Niche Category</label>
+                <select id="edit-niche">
+                  <option value="uncategorized">General</option>
+                  <option value="urgent">Urgent 🚨</option>
+                  <option value="money">Make Money 💰</option>
+                  <option value="relax">Relax ☕</option>
+                  <option value="kids">Kids Category 🧸</option>
+                  <option value="family">Family 👨‍👩‍👧‍👦</option>
+                  <option value="health">Health Category 🍏</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Milestone Dates -->
+            <div class="details-card">
+              <h2>Milestone Dates</h2>
+              <div class="form-group-row">
+                <label for="date-added-input">Date Added</label>
+                <input type="date" id="date-added-input">
+              </div>
+              <div class="form-group-row">
+                <label for="date-watched-input">Date Watched</label>
+                <input type="date" id="date-watched-input">
+              </div>
+              <div class="form-group-row">
+                <label for="date-complete-input">Date Completed</label>
+                <input type="date" id="date-complete-input">
+              </div>
+            </div>
+
+            <!-- History of dates watched & Who watched -->
+            <div class="details-card history-card">
+              <h2>Watch Session Log</h2>
+              <p class="section-desc">Record who watched this video and when.</p>
+              
+              <div class="history-list" id="history-log-list">
+                <!-- Log rows filled dynamically -->
+                <div class="empty-history-text">No watch sessions logged yet.</div>
+              </div>
+
+              <div class="add-history-form">
+                <input type="date" id="new-history-date">
+                <input type="text" id="new-history-viewer" placeholder="Who watched? (e.g. Self, Kids)">
+                <button id="add-history-log-btn" class="btn-small btn-success">+ Add Log</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 3: Calendar View -->
+        <section class="tab-content" id="tab-calendar">
+          <div class="calendar-container">
+            <header class="calendar-header">
+              <button id="calendar-prev-month">◀</button>
+              <h2 id="calendar-month-year">May 2026</h2>
+              <button id="calendar-next-month">▶</button>
+            </header>
+            <div class="calendar-days-header">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+              <!-- Rendered dynamically -->
+            </div>
+            <div class="calendar-legend">
+              <span class="legend-item"><span class="dot dot-added"></span> Added</span>
+              <span class="legend-item"><span class="dot dot-watched"></span> Watched</span>
+              <span class="legend-item"><span class="dot dot-completed"></span> Completed</span>
+            </div>
+            <!-- Calendar Detail panel -->
+            <div class="calendar-events-today" id="calendar-day-details">
+              <h3>Select a date to view scheduling milestones</h3>
+              <div id="day-events-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 4: Analytics Insights -->
+        <section class="tab-content" id="tab-insights">
+          <div class="insights-grid">
+            <div class="insights-card progress-card">
+              <h2>Watch Completion</h2>
+              <div class="progress-ring-container">
+                <svg class="progress-ring" width="120" height="120">
+                  <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                  <circle class="progress-ring-circle" id="insights-progress-circle" stroke="#818cf8" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                </svg>
+                <div class="progress-ring-text">
+                  <span id="insights-progress-percent">0%</span>
+                  <span class="subtext">Completed</span>
+                </div>
+              </div>
+              <div class="simple-stats">
+                <div class="stat-row">
+                  <span>Completed:</span>
+                  <strong id="insights-num-completed">0</strong>
+                </div>
+                <div class="stat-row">
+                  <span>In Progress (Watched):</span>
+                  <strong id="insights-num-watched">0</strong>
+                </div>
+                <div class="stat-row">
+                  <span>To Watch (Added):</span>
+                  <strong id="insights-num-added">0</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="insights-card">
+              <h2>Niche / Categories</h2>
+              <div class="bar-chart-container" id="insights-categories-chart">
+                <!-- Programmatic bars -->
+              </div>
+            </div>
+
+            <div class="insights-card">
+              <h2>Timeframe Allocations</h2>
+              <div class="bar-chart-container" id="insights-timeframes-chart">
+                <!-- Programmatic bars -->
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings / Export Import Modal -->
+  <div class="modal" id="settings-modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Extension Settings & Backup</h2>
+        <button class="close-modal-btn" id="close-settings-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-group">
+          <h3>Import / Export Backup</h3>
+          <p>Export your watch list, notes, and logs to a JSON file, or import an existing backup.</p>
+          <div class="backup-actions">
+            <button class="btn btn-primary" id="export-backup-btn">📤 Export JSON Backup</button>
+            <button class="btn btn-secondary" id="import-backup-trigger-btn">📥 Import JSON Backup</button>
+            <input type="file" id="import-backup-file-input" style="display: none;" accept=".json">
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3>Reset Extension Data</h3>
+          <p class="warning-text">⚠️ This will delete all your added videos, notes, logs, and calendar records permanently.</p>
+          <button class="btn btn-danger" id="reset-data-btn">Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Tag Dialog Modal -->
+  <div class="modal" id="tag-modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content small-modal">
+      <div class="modal-header">
+        <h2>Add Tag</h2>
+        <button class="close-modal-btn" id="close-tag-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="new-tag-input">Tag Name</label>
+          <input type="text" id="new-tag-input" placeholder="e.g. learning, fitness">
+        </div>
+        <button class="btn btn-primary" id="save-tag-btn" style="margin-top: 10px; width: 100%;">Add Tag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shortcuts Help Modal -->
+  <div class="modal" id="shortcuts-modal" style="display: none;">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Keyboard Shortcuts (Workflowy style)</h2>
+        <button class="close-modal-btn" id="close-shortcuts-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="shortcuts-table">
+          <thead>
+            <tr>
+              <th>Shortcut</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><kbd>Enter</kbd></td>
+              <td>Create a new bullet (sibling) below the current one</td>
+            </tr>
+            <tr>
+              <td><kbd>Tab</kbd></td>
+              <td>Indent bullet (nest it inside the bullet above)</td>
+            </tr>
+            <tr>
+              <td><kbd>Shift</kbd> + <kbd>Tab</kbd></td>
+              <td>Outdent bullet (move it up one level in hierarchy)</td>
+            </tr>
+            <tr>
+              <td><kbd>Double Click</kbd> Bullet Bullet Point</td>
+              <td>Zoom In (focus on this bullet and its children)</td>
+            </tr>
+            <tr>
+              <td><kbd>Shift</kbd> + <kbd>Enter</kbd></td>
+              <td>Toggle note body expanded / collapsed (or add description)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
