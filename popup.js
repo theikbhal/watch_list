@@ -1,5 +1,49 @@
 // popup.js for Watch List Chrome Extension
 
+// Polyfill chrome extension APIs for testing outside of extension context
+if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+  window.chrome = window.chrome || {};
+  chrome.storage = {
+    local: {
+      get: (keys, callback) => {
+        const result = {};
+        for (let key in keys) {
+          const val = localStorage.getItem(key);
+          result[key] = val ? JSON.parse(val) : keys[key];
+        }
+        setTimeout(() => callback(result), 0);
+      },
+      set: (data, callback) => {
+        for (let key in data) {
+          localStorage.setItem(key, JSON.stringify(data[key]));
+        }
+        if (callback) setTimeout(callback, 0);
+      }
+    }
+  };
+  chrome.tabs = {
+    query: (queryInfo, callback) => {
+      setTimeout(() => {
+        callback([{
+          title: "YouTube: Learn CSS Grid in 10 Minutes",
+          url: "https://www.youtube.com/watch?v=0-DY8J_sk80"
+        }]);
+      }, 0);
+    }
+  };
+  chrome.windows = {
+    getCurrent: (callback) => {
+      setTimeout(() => callback({ id: 1 }), 0);
+    }
+  };
+  chrome.sidePanel = {
+    open: () => Promise.resolve()
+  };
+  chrome.runtime = {
+    sendMessage: () => {}
+  };
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const tabTitleEl = document.getElementById("tab-title");
   const tabUrlEl = document.getElementById("tab-url");

@@ -1,5 +1,36 @@
 // sidepanel.js - Main Controller for Watch List Chrome Extension
 
+// Polyfill chrome extension APIs for testing outside of extension context
+if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+  window.chrome = window.chrome || {};
+  chrome.storage = {
+    local: {
+      get: (keys, callback) => {
+        const result = {};
+        for (let key in keys) {
+          const val = localStorage.getItem(key);
+          result[key] = val ? JSON.parse(val) : keys[key];
+        }
+        setTimeout(() => callback(result), 0);
+      },
+      set: (data, callback) => {
+        for (let key in data) {
+          localStorage.setItem(key, JSON.stringify(data[key]));
+        }
+        if (callback) setTimeout(callback, 0);
+      },
+      clear: (callback) => {
+        localStorage.clear();
+        if (callback) setTimeout(callback, 0);
+      }
+    }
+  };
+  chrome.runtime = {
+    onMessage: { addListener: () => {} },
+    sendMessage: () => {}
+  };
+}
+
 // Global state
 let state = {
   videos: [],
