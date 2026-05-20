@@ -36,6 +36,7 @@ let state = {
   videos: [],
   activeVideoId: null,
   activeZoomNoteId: null, // Note ID currently zoomed in (Workflowy focus)
+  currentViewMode: "notes", // Active workspace view: notes, trello, calendar, priority, search, focus
   filters: {
     timeframe: "all",
     priority: "all",
@@ -156,6 +157,12 @@ function saveData() {
     renderWelcomeStats();
     updateInsights();
     renderCalendar();
+    
+    // Refresh active global views
+    if (state.currentViewMode === "trello") renderTrelloView();
+    else if (state.currentViewMode === "priority") renderPriorityView();
+    else if (state.currentViewMode === "calendar") renderGlobalCalendarView();
+    else if (state.currentViewMode === "search") renderSearchView();
   });
 }
 
@@ -315,6 +322,28 @@ function setupEventListeners() {
   // Calendar Controls
   calendarPrevBtn.addEventListener("click", () => { adjustCalendarMonth(-1); });
   calendarNextBtn.addEventListener("click", () => { adjustCalendarMonth(1); });
+
+  // Workspace Views click events
+  document.querySelectorAll(".nav-mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mode = btn.getAttribute("data-mode");
+      switchWorkspaceView(mode);
+    });
+  });
+
+  // Exit focus button click event
+  document.getElementById("exit-focus-btn").addEventListener("click", () => {
+    switchWorkspaceView("notes");
+  });
+
+  // Global search explorer inputs
+  document.getElementById("gsearch-input").addEventListener("input", renderSearchView);
+  document.getElementById("gsearch-niche-select").addEventListener("change", renderSearchView);
+  document.getElementById("gsearch-priority-select").addEventListener("change", renderSearchView);
+
+  // Global calendar buttons
+  document.getElementById("gcalendar-prev-month").addEventListener("click", () => adjustGlobalCalendarMonth(-1));
+  document.getElementById("gcalendar-next-month").addEventListener("click", () => adjustGlobalCalendarMonth(1));
 }
 
 function updateVideoField(field, value) {
@@ -1305,3 +1334,551 @@ function handleResetData() {
     });
   }
 }
+
+// --- WORKSPACE VIEW CONTROLLER ---
+function switchWorkspaceView(mode) {
+  // If we were in focus mode, exit it
+  if (mode !== "focus") {
+    document.body.classList.remove("focus-active");
+    document.getElementById("exit-focus-btn").style.display = "none";
+  }
+
+  // Update nav buttons active state
+  document.querySelectorAll(".nav-mode-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-mode") === mode);
+  });
+
+  if (mode === "focus") {
+    if (!state.activeVideoId) {
+      alert("Please select a video from the sidebar first to enter Focus mode.");
+      switchWorkspaceView("notes");
+      return;
+    }
+    document.body.classList.add("focus-active");
+    document.getElementById("exit-focus-btn").style.display = "block";
+    
+    // In focus mode, the notes view panel is active
+    document.querySelectorAll(".view-panel").forEach(panel => {
+      panel.classList.toggle("active-view", panel.id === "view-notes");
+    });
+    return;
+  }
+
+  // Set active panel view container
+  document.querySelectorAll(".view-panel").forEach(panel => {
+    panel.classList.toggle("active-view", panel.id === `view-${mode}`);
+  });
+
+  state.currentViewMode = mode;
+
+  // Trigger view renders
+  if (mode === "trello") {
+    renderTrelloView();
+  } else if (mode === "calendar") {
+    renderGlobalCalendarView();
+  } else if (mode === "priority") {
+    renderPriorityView();
+  } else if (mode === "search") {
+    renderSearchView();
+  }
+}
+
+// --- TRELLO BOARD RENDERING ---
+function renderTrelloView() {
+  const cardsTodo = document.getElementById("trello-cards-todo");
+  const cardsWatching = document.getElementById("trello-cards-watching");
+  const cardsCompleted = document.getElementById("trello-cards-completed");
+
+  if (!cardsTodo || !cardsWatching || !cardsCompleted) return;
+
+  cardsTodo.innerHTML = "";
+  cardsWatching.innerHTML = "";
+  cardsCompleted.innerHTML = "";
+
+  let todoCount = 0;
+  let watchingCount = 0;
+  let completedCount = 0;
+
+  state.videos.forEach(video => {
+    const card = document.createElement("div");
+    card.className = "trello-card";
+    
+    let metaHtml = "";
+    if (video.priority && video.priority !== "uncategorized") {
+      metaHtml += `<span class="meta-pill pill-${video.priority}">${video.priority}</span>`;
+    }
+    if (video.niche && video.niche !== "uncategorized") {
+      metaHtml += `<span class="meta-pill">${video.niche}</span>`;
+    }
+    if (video.timeframe) {
+      metaHtml += `<span class="meta-pill">${video.timeframe}</span>`;
+    }
+
+    const sourceInfo = detectVideoSource(video.url);
+
+    card.innerHTML = `
+      <div class="trello-card-title">${video.title}</div>
+      <div class="trello-card-meta">
+        <span class="source-badge ${sourceInfo.label.includes('YouTube') ? 'badge-youtube' : sourceInfo.label.includes('X.com') ? 'badge-x' : sourceInfo.label.includes('Instagram') ? 'badge-instagram' : 'badge-link'}">${sourceInfo.label}</span>
+        ${metaHtml}
+      </div>
+      <div class="trello-card-actions">
+        ${getTrelloActionsHtml(video)}
+      </div>
+    `;
+
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+      selectVideo(video.id);
+      switchWorkspaceView("notes");
+    });
+
+    // Wire up buttons
+    card.querySelectorAll(".trello-card-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute("data-action");
+        handleTrelloAction(video.id, action);
+      });
+    });
+
+    // Sort into columns
+    if (video.dateComplete) {
+      cardsCompleted.appendChild(card);
+      completedCount++;
+    } else if (video.dateWatched) {
+      cardsWatching.appendChild(card);
+      watchingCount++;
+    } else {
+      cardsTodo.appendChild(card);
+      todoCount++;
+    }
+  });
+
+  const countTodoEl = document.getElementById("trello-count-todo");
+  const countWatchingEl = document.getElementById("trello-count-watching");
+  const countCompletedEl = document.getElementById("trello-count-completed");
+
+  if (countTodoEl) countTodoEl.textContent = todoCount;
+  if (countWatchingEl) countWatchingEl.textContent = watchingCount;
+  if (countCompletedEl) countCompletedEl.textContent = completedCount;
+}
+
+function getTrelloActionsHtml(video) {
+  if (video.dateComplete) {
+    return `<button class="trello-card-btn" data-action="uncomplete">↩ Re-watch</button>`;
+  } else if (video.dateWatched) {
+    return `
+      <button class="trello-card-btn" data-action="reset">↩ Reset</button>
+      <button class="trello-card-btn" data-action="complete">✅ Complete</button>
+    `;
+  } else {
+    return `<button class="trello-card-btn" data-action="watch">👁️ Watch</button>`;
+  }
+}
+
+function handleTrelloAction(videoId, action) {
+  const video = state.videos.find(v => v.id === videoId);
+  if (!video) return;
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  if (action === "watch") {
+    video.dateWatched = todayStr;
+    if (!video.watchHistory) video.watchHistory = [];
+    video.watchHistory.push({
+      id: "log_" + Date.now(),
+      date: todayStr,
+      viewer: "Self"
+    });
+  } else if (action === "complete") {
+    video.dateComplete = todayStr;
+  } else if (action === "reset") {
+    video.dateWatched = "";
+    video.dateComplete = "";
+  } else if (action === "uncomplete") {
+    video.dateComplete = "";
+  }
+
+  saveData();
+}
+
+// --- PRIORITY BOARD RENDERING ---
+function renderPriorityView() {
+  const cardsHigh = document.getElementById("priority-cards-high");
+  const cardsLow = document.getElementById("priority-cards-low");
+  const cardsUncat = document.getElementById("priority-cards-uncategorized");
+
+  if (!cardsHigh || !cardsLow || !cardsUncat) return;
+
+  cardsHigh.innerHTML = "";
+  cardsLow.innerHTML = "";
+  cardsUncat.innerHTML = "";
+
+  let highCount = 0;
+  let lowCount = 0;
+  let uncatCount = 0;
+
+  state.videos.forEach(video => {
+    const card = document.createElement("div");
+    card.className = "trello-card";
+    
+    let metaHtml = "";
+    if (video.niche && video.niche !== "uncategorized") {
+      metaHtml += `<span class="meta-pill">${video.niche}</span>`;
+    }
+    if (video.timeframe) {
+      metaHtml += `<span class="meta-pill">${video.timeframe}</span>`;
+    }
+    if (video.dateComplete) {
+      metaHtml += `<span class="meta-pill pill-completed">Completed</span>`;
+    }
+
+    const sourceInfo = detectVideoSource(video.url);
+
+    card.innerHTML = `
+      <div class="trello-card-title">${video.title}</div>
+      <div class="trello-card-meta">
+        <span class="source-badge ${sourceInfo.label.includes('YouTube') ? 'badge-youtube' : sourceInfo.label.includes('X.com') ? 'badge-x' : sourceInfo.label.includes('Instagram') ? 'badge-instagram' : 'badge-link'}">${sourceInfo.label}</span>
+        ${metaHtml}
+      </div>
+      <div class="trello-card-actions">
+        ${getPriorityActionsHtml(video)}
+      </div>
+    `;
+
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+      selectVideo(video.id);
+      switchWorkspaceView("notes");
+    });
+
+    card.querySelectorAll(".trello-card-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute("data-action");
+        handlePriorityAction(video.id, action);
+      });
+    });
+
+    if (video.priority === "high") {
+      cardsHigh.appendChild(card);
+      highCount++;
+    } else if (video.priority === "low") {
+      cardsLow.appendChild(card);
+      lowCount++;
+    } else {
+      cardsUncat.appendChild(card);
+      uncatCount++;
+    }
+  });
+
+  const countHighEl = document.getElementById("priority-count-high");
+  const countLowEl = document.getElementById("priority-count-low");
+  const countUncatEl = document.getElementById("priority-count-uncategorized");
+
+  if (countHighEl) countHighEl.textContent = highCount;
+  if (countLowEl) countLowEl.textContent = lowCount;
+  if (countUncatEl) countUncatEl.textContent = uncatCount;
+}
+
+function getPriorityActionsHtml(video) {
+  if (video.priority === "high") {
+    return `
+      <button class="trello-card-btn" data-action="set-low">▼ Low</button>
+      <button class="trello-card-btn" data-action="set-uncat">Clear</button>
+    `;
+  } else if (video.priority === "low") {
+    return `
+      <button class="trello-card-btn" data-action="set-high">▲ High</button>
+      <button class="trello-card-btn" data-action="set-uncat">Clear</button>
+    `;
+  } else {
+    return `
+      <button class="trello-card-btn" data-action="set-high">▲ High</button>
+      <button class="trello-card-btn" data-action="set-low">▼ Low</button>
+    `;
+  }
+}
+
+function handlePriorityAction(videoId, action) {
+  const video = state.videos.find(v => v.id === videoId);
+  if (!video) return;
+
+  if (action === "set-high") video.priority = "high";
+  else if (action === "set-low") video.priority = "low";
+  else if (action === "set-uncat") video.priority = "uncategorized";
+
+  saveData();
+}
+
+// --- GLOBAL CALENDAR RENDERING ---
+function adjustGlobalCalendarMonth(offset) {
+  state.calendarMonth += offset;
+  if (state.calendarMonth < 0) {
+    state.calendarMonth = 11;
+    state.calendarYear -= 1;
+  } else if (state.calendarMonth > 11) {
+    state.calendarMonth = 0;
+    state.calendarYear += 1;
+  }
+  renderGlobalCalendarView();
+}
+
+function selectGlobalCalendarDate(dateStr) {
+  if (state.calendarSelectedDate === dateStr) {
+    state.calendarSelectedDate = null;
+  } else {
+    state.calendarSelectedDate = dateStr;
+  }
+  renderGlobalCalendarView();
+}
+
+function renderGlobalCalendarView() {
+  const gcalendarGrid = document.getElementById("gcalendar-grid");
+  const gcalendarMonthYear = document.getElementById("gcalendar-month-year");
+  
+  if (!gcalendarGrid || !gcalendarMonthYear) return;
+
+  gcalendarGrid.innerHTML = "";
+  
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  gcalendarMonthYear.textContent = `${monthNames[state.calendarMonth]} ${state.calendarYear}`;
+
+  const firstDayIndex = new Date(state.calendarYear, state.calendarMonth, 1).getDay();
+  const totalDays = new Date(state.calendarYear, state.calendarMonth + 1, 0).getDate();
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  // Fill pre-month empty cells
+  for (let i = 0; i < firstDayIndex; i++) {
+    const emptyCell = document.createElement("div");
+    emptyCell.className = "calendar-day day-empty";
+    gcalendarGrid.appendChild(emptyCell);
+  }
+
+  // Draw Days
+  for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+    const cellDateStr = `${state.calendarYear}-${String(state.calendarMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+    
+    const dayCell = document.createElement("div");
+    dayCell.className = "calendar-day";
+    dayCell.setAttribute("data-date", cellDateStr);
+
+    if (cellDateStr === todayStr) {
+      dayCell.classList.add("day-today");
+    }
+
+    if (state.calendarSelectedDate === cellDateStr) {
+      dayCell.classList.add("day-selected");
+    }
+
+    dayCell.innerHTML = `<span class="day-num">${dayNum}</span>`;
+
+    const events = getVideoEventsForDate(cellDateStr);
+    const dotsContainer = document.createElement("div");
+    dotsContainer.className = "day-dots";
+
+    if (events.added.length > 0) {
+      dotsContainer.innerHTML += `<span class="dot dot-added" title="Added: ${events.added.length}"></span>`;
+    }
+    if (events.watched.length > 0) {
+      dotsContainer.innerHTML += `<span class="dot dot-watched" title="Watched/Logged: ${events.watched.length}"></span>`;
+    }
+    if (events.completed.length > 0) {
+      dotsContainer.innerHTML += `<span class="dot dot-completed" title="Completed: ${events.completed.length}"></span>`;
+    }
+
+    if (dotsContainer.children.length > 0) {
+      dayCell.appendChild(dotsContainer);
+    }
+
+    dayCell.addEventListener("click", () => {
+      selectGlobalCalendarDate(cellDateStr);
+    });
+
+    gcalendarGrid.appendChild(dayCell);
+  }
+
+  renderGlobalCalendarSelectedDayDetails();
+}
+
+function renderGlobalCalendarSelectedDayDetails() {
+  const gcalendarDayDetails = document.getElementById("gcalendar-day-details");
+  if (!gcalendarDayDetails) return;
+
+  if (!state.calendarSelectedDate) {
+    gcalendarDayDetails.innerHTML = `<h3>Select a calendar date to view specific video activity</h3>`;
+    return;
+  }
+
+  const events = getVideoEventsForDate(state.calendarSelectedDate);
+  gcalendarDayDetails.innerHTML = `
+    <h3>Milestones on ${state.calendarSelectedDate}</h3>
+    <div id="gday-events-list"></div>
+  `;
+  const container = document.getElementById("gday-events-list");
+
+  let totalEvents = 0;
+
+  const renderEventSub = (videoList, typeLabel, borderClass) => {
+    videoList.forEach(v => {
+      totalEvents++;
+      const div = document.createElement("div");
+      div.className = "day-event-row";
+      div.innerHTML = `
+        <span class="dot ${borderClass}"></span>
+        <strong style="color:var(--primary); font-size:11px;">[${typeLabel}]</strong>
+        <span style="cursor:pointer; text-decoration:underline;" class="view-vid-link" data-id="${v.id}">${v.title}</span>
+      `;
+      div.querySelector(".view-vid-link").addEventListener("click", () => {
+        selectVideo(v.id);
+        switchWorkspaceView("notes");
+      });
+      container.appendChild(div);
+    });
+  };
+
+  renderEventSub(events.added, "Added", "dot-added");
+  renderEventSub(events.watched, "Watched/Logged", "dot-watched");
+  renderEventSub(events.completed, "Completed", "dot-completed");
+
+  if (totalEvents === 0) {
+    container.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">No activity recorded for this day.</p>`;
+  }
+}
+
+// --- GLOBAL SEARCH EXPLORER RENDERING ---
+function renderSearchView() {
+  const gsearchInput = document.getElementById("gsearch-input");
+  const gnicheSelect = document.getElementById("gsearch-niche-select");
+  const gprioritySelect = document.getElementById("gsearch-priority-select");
+  const gresultsList = document.getElementById("gsearch-results-list");
+
+  if (!gsearchInput || !gnicheSelect || !gprioritySelect || !gresultsList) return;
+
+  const query = gsearchInput.value.toLowerCase().trim();
+  const nicheFilter = gnicheSelect.value;
+  const priorityFilter = gprioritySelect.value;
+
+  gresultsList.innerHTML = "";
+
+  if (!query && nicheFilter === "all" && priorityFilter === "all") {
+    gresultsList.innerHTML = `<div class="empty-state">Enter a search query or select filters to explore.</div>`;
+    return;
+  }
+
+  let matchCount = 0;
+
+  state.videos.forEach(video => {
+    // 1. Filter by Niche
+    if (nicheFilter !== "all") {
+      const vNiche = video.niche || "uncategorized";
+      if (vNiche !== nicheFilter) return;
+    }
+
+    // 2. Filter by Priority
+    if (priorityFilter !== "all") {
+      const vPriority = video.priority || "uncategorized";
+      if (vPriority !== priorityFilter) return;
+    }
+
+    // 3. Search query match
+    let titleMatch = false;
+    let tagMatch = false;
+    let matchingNoteTexts = [];
+
+    if (query) {
+      titleMatch = video.title.toLowerCase().includes(query);
+      tagMatch = video.tags && video.tags.some(t => t.toLowerCase().includes(query));
+      
+      // Recursive bullet notes match
+      findMatchingNoteBullets(video.notes || [], query, matchingNoteTexts);
+    } else {
+      titleMatch = true;
+    }
+
+    if (!titleMatch && !tagMatch && matchingNoteTexts.length === 0) {
+      return;
+    }
+
+    // Create result card
+    const card = document.createElement("div");
+    card.className = "search-result-card";
+    
+    let metaHtml = "";
+    if (video.priority && video.priority !== "uncategorized") {
+      metaHtml += `<span class="meta-pill pill-${video.priority}">${video.priority}</span>`;
+    }
+    if (video.niche && video.niche !== "uncategorized") {
+      metaHtml += `<span class="meta-pill">${video.niche}</span>`;
+    }
+    if (video.tags) {
+      video.tags.forEach(t => {
+        metaHtml += `<span class="editor-tag" style="margin-bottom:0; pointer-events:none; font-size:10px; padding:2px 6px;">#${t}</span>`;
+      });
+    }
+
+    let snippetsHtml = "";
+    if (matchingNoteTexts.length > 0) {
+      snippetsHtml = `
+        <div class="result-snippets">
+          ${matchingNoteTexts.map(text => {
+            const highlighted = highlightSearchText(text, query);
+            return `<div class="result-snippet-item">${highlighted}</div>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    const sourceInfo = detectVideoSource(video.url);
+
+    card.innerHTML = `
+      <div class="result-video-title">${highlightSearchText(video.title, query)}</div>
+      <div class="result-video-meta">
+        <span class="source-badge ${sourceInfo.label.includes('YouTube') ? 'badge-youtube' : sourceInfo.label.includes('X.com') ? 'badge-x' : sourceInfo.label.includes('Instagram') ? 'badge-instagram' : 'badge-link'}">${sourceInfo.label}</span>
+        ${metaHtml}
+      </div>
+      ${snippetsHtml}
+    `;
+
+    card.addEventListener("click", () => {
+      selectVideo(video.id);
+      switchWorkspaceView("notes");
+    });
+
+    gresultsList.appendChild(card);
+    matchCount++;
+  });
+
+  if (matchCount === 0) {
+    gresultsList.innerHTML = `<div class="empty-state">No matching results found. Try a different query.</div>`;
+  }
+}
+
+function findMatchingNoteBullets(notes, query, results) {
+  notes.forEach(note => {
+    if (note.text && note.text.toLowerCase().includes(query)) {
+      results.push(note.text);
+    }
+    if (note.children && note.children.length > 0) {
+      findMatchingNoteBullets(note.children, query, results);
+    }
+  });
+}
+
+function highlightSearchText(text, query) {
+  if (!query) return text;
+  const index = text.toLowerCase().indexOf(query);
+  if (index === -1) return text;
+
+  const originalStr = text.substring(index, index + query.length);
+  const regex = new RegExp(escapeRegExp(originalStr), 'g');
+  return text.replace(regex, `<span class="highlight">${originalStr}</span>`);
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+

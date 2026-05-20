@@ -82,220 +82,348 @@
 
     <!-- Main Workspace -->
     <main class="main-content">
-      <!-- Welcome Panel (when no video is selected) -->
-      <div class="welcome-panel" id="welcome-panel">
-        <div class="welcome-card">
-          <h1>Welcome to Watch List 🎬</h1>
-          <p>Select a video from the sidebar or paste a link to start taking notes and scheduling your watch sessions.</p>
-          <div class="welcome-stats">
-            <div class="welcome-stat-box">
-              <span class="stat-num" id="welcome-stat-total">0</span>
-              <span class="stat-label">Total Videos</span>
+      <!-- Workspace Navigation Bar -->
+      <header class="workspace-nav">
+        <div class="nav-brand">Workspace</div>
+        <div class="nav-modes">
+          <button class="nav-mode-btn active" data-mode="notes" title="Notes View">📝 Notes</button>
+          <button class="nav-mode-btn" data-mode="trello" title="Trello Kanban View">📋 Trello</button>
+          <button class="nav-mode-btn" data-mode="calendar" title="Global Calendar View">📆 Calendar</button>
+          <button class="nav-mode-btn" data-mode="priority" title="Priority Board View">⚡ Priority</button>
+          <button class="nav-mode-btn" data-mode="search" title="Global Search Explorer">🔍 Search</button>
+          <button class="nav-mode-btn" id="focus-mode-btn" data-mode="focus" title="Minimalistic Focus View">🧘 Focus</button>
+        </div>
+      </header>
+
+      <!-- Floating Exit Focus Button -->
+      <button id="exit-focus-btn" class="exit-focus-btn" style="display: none;" title="Exit Focus Mode">Exit Focus Mode 🧘‍♂️</button>
+
+      <!-- VIEW 1: Notes View Panel -->
+      <div id="view-notes" class="view-panel active-view">
+        <!-- Welcome Panel (when no video is selected) -->
+        <div class="welcome-panel" id="welcome-panel">
+          <div class="welcome-card">
+            <h1>Welcome to Watch List 🎬</h1>
+            <p>Select a video from the sidebar or paste a link to start taking notes and scheduling your watch sessions.</p>
+            <div class="welcome-stats">
+              <div class="welcome-stat-box">
+                <span class="stat-num" id="welcome-stat-total">0</span>
+                <span class="stat-label">Total Videos</span>
+              </div>
+              <div class="welcome-stat-box">
+                <span class="stat-num" id="welcome-stat-completed">0</span>
+                <span class="stat-label">Completed</span>
+              </div>
             </div>
-            <div class="welcome-stat-box">
-              <span class="stat-num" id="welcome-stat-completed">0</span>
-              <span class="stat-label">Completed</span>
+          </div>
+        </div>
+
+        <!-- Editor Panel (when a video is selected) -->
+        <div class="editor-panel" id="editor-panel" style="display: none;">
+          <!-- Video Header -->
+          <header class="editor-header">
+            <div class="header-left">
+              <span class="source-badge" id="editor-source-badge">YouTube</span>
+              <h1 id="editor-title" contenteditable="true" title="Click to edit title">Video Title</h1>
+              <a href="#" target="_blank" id="editor-link" class="visit-link-btn">Open Video ↗</a>
             </div>
+            <div class="header-right">
+              <button class="btn-action btn-delete" id="delete-video-btn" title="Delete Video">🗑️ Delete</button>
+            </div>
+          </header>
+
+          <!-- Tabs Navigation -->
+          <nav class="nav-tabs">
+            <button class="tab-link active" data-tab="tab-notes">📝 Notes & Focus</button>
+            <button class="tab-link" data-tab="tab-details">📅 Dates & Logs</button>
+            <button class="tab-link" data-tab="tab-calendar">📆 Calendar View</button>
+            <button class="tab-link" data-tab="tab-insights">📊 Analytics Insights</button>
+          </nav>
+
+          <!-- Tab 1: Workflowy-style Notes -->
+          <section class="tab-content active" id="tab-notes">
+            <div class="notes-toolbar">
+              <!-- Breadcrumbs for Zoom out -->
+              <div class="breadcrumbs" id="note-breadcrumbs">
+                <span class="breadcrumb-item root-breadcrumb">Root Notes</span>
+              </div>
+              <div class="toolbar-actions">
+                <button id="zoom-out-btn" class="btn-small" disabled>Zoom Out 🔍-</button>
+                <button id="btn-add-tag" class="btn-small">+ Add Tag</button>
+                <button id="help-shortcuts-btn" class="btn-small" title="View keyboard shortcuts">❓ Shortcuts</button>
+              </div>
+            </div>
+
+            <!-- Video Tags Box -->
+            <div class="editor-tags-box" id="editor-tags-box">
+              <!-- Tags will render here -->
+            </div>
+
+            <!-- The nested editor list -->
+            <div class="nested-editor-container">
+              <div class="nested-editor" id="nested-notes-root">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </section>
+
+          <!-- Tab 2: Dates & Details -->
+          <section class="tab-content" id="tab-details">
+            <div class="details-grid">
+              <!-- Scheduling Box -->
+              <div class="details-card">
+                <h2>Schedule Details</h2>
+                <div class="form-group-row">
+                  <label>Timeframe</label>
+                  <select id="edit-timeframe">
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">This Quarter</option>
+                    <option value="year">This Year</option>
+                  </select>
+                </div>
+                <div class="form-group-row">
+                  <label>Priority</label>
+                  <select id="edit-priority">
+                    <option value="high">High Priority</option>
+                    <option value="low">Low Priority</option>
+                    <option value="uncategorized">Uncategorized</option>
+                  </select>
+                </div>
+                <div class="form-group-row">
+                  <label>Niche / Niche Category</label>
+                  <select id="edit-niche">
+                    <option value="uncategorized">General</option>
+                    <option value="urgent">Urgent 🚨</option>
+                    <option value="money">Make Money 💰</option>
+                    <option value="relax">Relax ☕</option>
+                    <option value="kids">Kids Category 🧸</option>
+                    <option value="family">Family 👨‍👩‍👧‍👦</option>
+                    <option value="health">Health Category 🍏</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Milestone Dates -->
+              <div class="details-card">
+                <h2>Milestone Dates</h2>
+                <div class="form-group-row">
+                  <label for="date-added-input">Date Added</label>
+                  <input type="date" id="date-added-input">
+                </div>
+                <div class="form-group-row">
+                  <label for="date-watched-input">Date Watched</label>
+                  <input type="date" id="date-watched-input">
+                </div>
+                <div class="form-group-row">
+                  <label for="date-complete-input">Date Completed</label>
+                  <input type="date" id="date-complete-input">
+                </div>
+              </div>
+
+              <!-- History of dates watched & Who watched -->
+              <div class="details-card history-card">
+                <h2>Watch Session Log</h2>
+                <p class="section-desc">Record who watched this video and when.</p>
+                
+                <div class="history-list" id="history-log-list">
+                  <!-- Log rows filled dynamically -->
+                  <div class="empty-history-text">No watch sessions logged yet.</div>
+                </div>
+
+                <div class="add-history-form">
+                  <input type="date" id="new-history-date">
+                  <input type="text" id="new-history-viewer" placeholder="Who watched? (e.g. Self, Kids)">
+                  <button id="add-history-log-btn" class="btn-small btn-success">+ Add Log</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Tab 3: Calendar View -->
+          <section class="tab-content" id="tab-calendar">
+            <div class="calendar-container">
+              <header class="calendar-header">
+                <button id="calendar-prev-month">◀</button>
+                <h2 id="calendar-month-year">May 2026</h2>
+                <button id="calendar-next-month">▶</button>
+              </header>
+              <div class="calendar-days-header">
+                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+              </div>
+              <div class="calendar-grid" id="calendar-grid">
+                <!-- Rendered dynamically -->
+              </div>
+              <div class="calendar-legend">
+                <span class="legend-item"><span class="dot dot-added"></span> Added</span>
+                <span class="legend-item"><span class="dot dot-watched"></span> Watched</span>
+                <span class="legend-item"><span class="dot dot-completed"></span> Completed</span>
+              </div>
+              <!-- Calendar Detail panel -->
+              <div class="calendar-events-today" id="calendar-day-details">
+                <h3>Select a date to view scheduling milestones</h3>
+                <div id="day-events-list"></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Tab 4: Analytics Insights -->
+          <section class="tab-content" id="tab-insights">
+            <div class="insights-grid">
+              <div class="insights-card progress-card">
+                <h2>Watch Completion</h2>
+                <div class="progress-ring-container">
+                  <svg class="progress-ring" width="120" height="120">
+                    <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                    <circle class="progress-ring-circle" id="insights-progress-circle" stroke="#818cf8" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                  </svg>
+                  <div class="progress-ring-text">
+                    <span id="insights-progress-percent">0%</span>
+                    <span class="subtext">Completed</span>
+                  </div>
+                </div>
+                <div class="simple-stats">
+                  <div class="stat-row">
+                    <span>Completed:</span>
+                    <strong id="insights-num-completed">0</strong>
+                  </div>
+                  <div class="stat-row">
+                    <span>In Progress (Watched):</span>
+                    <strong id="insights-num-watched">0</strong>
+                  </div>
+                  <div class="stat-row">
+                    <span>To Watch (Added):</span>
+                    <strong id="insights-num-added">0</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="insights-card">
+                <h2>Niche / Categories</h2>
+                <div class="bar-chart-container" id="insights-categories-chart">
+                  <!-- Programmatic bars -->
+                </div>
+              </div>
+
+              <div class="insights-card">
+                <h2>Timeframe Allocations</h2>
+                <div class="bar-chart-container" id="insights-timeframes-chart">
+                  <!-- Programmatic bars -->
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Trello Kanban Board View Panel -->
+      <div id="view-trello" class="view-panel" style="display: none;">
+        <div class="view-header">
+          <h2>📋 Trello Board</h2>
+          <p>Organize your videos by watch status.</p>
+        </div>
+        <div class="trello-board">
+          <div class="trello-column">
+            <div class="trello-column-header col-todo">To Watch <span class="trello-count" id="trello-count-todo">0</span></div>
+            <div class="trello-cards" id="trello-cards-todo"></div>
+          </div>
+          <div class="trello-column">
+            <div class="trello-column-header col-watching">Watching <span class="trello-count" id="trello-count-watching">0</span></div>
+            <div class="trello-cards" id="trello-cards-watching"></div>
+          </div>
+          <div class="trello-column">
+            <div class="trello-column-header col-completed">Completed <span class="trello-count" id="trello-count-completed">0</span></div>
+            <div class="trello-cards" id="trello-cards-completed"></div>
           </div>
         </div>
       </div>
 
-      <!-- Editor Panel (when a video is selected) -->
-      <div class="editor-panel" id="editor-panel" style="display: none;">
-        <!-- Video Header -->
-        <header class="editor-header">
-          <div class="header-left">
-            <span class="source-badge" id="editor-source-badge">YouTube</span>
-            <h1 id="editor-title" contenteditable="true" title="Click to edit title">Video Title</h1>
-            <a href="#" target="_blank" id="editor-link" class="visit-link-btn">Open Video ↗</a>
+      <!-- VIEW 3: Global Calendar View Panel -->
+      <div id="view-calendar" class="view-panel" style="display: none;">
+        <div class="view-header">
+          <h2>📆 Global Calendar</h2>
+          <p>Scheduled milestones and watch history across all videos.</p>
+        </div>
+        <div class="global-calendar-container">
+          <header class="calendar-header">
+            <button id="gcalendar-prev-month">◀</button>
+            <h2 id="gcalendar-month-year">May 2026</h2>
+            <button id="gcalendar-next-month">▶</button>
+          </header>
+          <div class="calendar-days-header">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
           </div>
-          <div class="header-right">
-            <button class="btn-action btn-delete" id="delete-video-btn" title="Delete Video">🗑️ Delete</button>
+          <div class="calendar-grid" id="gcalendar-grid">
+            <!-- Rendered dynamically -->
           </div>
-        </header>
-
-        <!-- Tabs Navigation -->
-        <nav class="nav-tabs">
-          <button class="tab-link active" data-tab="tab-notes">📝 Notes & Focus</button>
-          <button class="tab-link" data-tab="tab-details">📅 Dates & Logs</button>
-          <button class="tab-link" data-tab="tab-calendar">📆 Calendar View</button>
-          <button class="tab-link" data-tab="tab-insights">📊 Analytics Insights</button>
-        </nav>
-
-        <!-- Tab 1: Workflowy-style Notes -->
-        <section class="tab-content active" id="tab-notes">
-          <div class="notes-toolbar">
-            <!-- Breadcrumbs for Zoom out -->
-            <div class="breadcrumbs" id="note-breadcrumbs">
-              <span class="breadcrumb-item root-breadcrumb">Root Notes</span>
-            </div>
-            <div class="toolbar-actions">
-              <button id="zoom-out-btn" class="btn-small" disabled>Zoom Out 🔍-</button>
-              <button id="btn-add-tag" class="btn-small">+ Add Tag</button>
-              <button id="help-shortcuts-btn" class="btn-small" title="View keyboard shortcuts">❓ Shortcuts</button>
-            </div>
+          <div class="calendar-legend">
+            <span class="legend-item"><span class="dot dot-added"></span> Added</span>
+            <span class="legend-item"><span class="dot dot-watched"></span> Watched</span>
+            <span class="legend-item"><span class="dot dot-completed"></span> Completed</span>
           </div>
-
-          <!-- Video Tags Box -->
-          <div class="editor-tags-box" id="editor-tags-box">
-            <!-- Tags will render here -->
+          <div class="calendar-events-today" id="gcalendar-day-details">
+            <h3>Select a calendar date to view specific video activity</h3>
+            <div id="gday-events-list"></div>
           </div>
+        </div>
+      </div>
 
-          <!-- The nested editor list -->
-          <div class="nested-editor-container">
-            <div class="nested-editor" id="nested-notes-root">
-              <!-- Rendered dynamically -->
-            </div>
+      <!-- VIEW 4: Priority Board View Panel -->
+      <div id="view-priority" class="view-panel" style="display: none;">
+        <div class="view-header">
+          <h2>⚡ Priority Board</h2>
+          <p>Organize your videos by urgency and focus level.</p>
+        </div>
+        <div class="priority-board">
+          <div class="trello-column">
+            <div class="trello-column-header col-priority-high">High Priority <span class="trello-count" id="priority-count-high">0</span></div>
+            <div class="trello-cards" id="priority-cards-high"></div>
           </div>
-        </section>
+          <div class="trello-column">
+            <div class="trello-column-header col-priority-low">Low Priority <span class="trello-count" id="priority-count-low">0</span></div>
+            <div class="trello-cards" id="priority-cards-low"></div>
+          </div>
+          <div class="trello-column">
+            <div class="trello-column-header col-priority-uncat">Uncategorized <span class="trello-count" id="priority-count-uncategorized">0</span></div>
+            <div class="trello-cards" id="priority-cards-uncategorized"></div>
+          </div>
+        </div>
+      </div>
 
-        <!-- Tab 2: Dates & Details -->
-        <section class="tab-content" id="tab-details">
-          <div class="details-grid">
-            <!-- Scheduling Box -->
-            <div class="details-card">
-              <h2>Schedule Details</h2>
-              <div class="form-group-row">
-                <label>Timeframe</label>
-                <select id="edit-timeframe">
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="quarter">This Quarter</option>
-                  <option value="year">This Year</option>
-                </select>
-              </div>
-              <div class="form-group-row">
-                <label>Priority</label>
-                <select id="edit-priority">
-                  <option value="high">High Priority</option>
-                  <option value="low">Low Priority</option>
-                  <option value="uncategorized">Uncategorized</option>
-                </select>
-              </div>
-              <div class="form-group-row">
-                <label>Niche / Niche Category</label>
-                <select id="edit-niche">
-                  <option value="uncategorized">General</option>
-                  <option value="urgent">Urgent 🚨</option>
-                  <option value="money">Make Money 💰</option>
-                  <option value="relax">Relax ☕</option>
-                  <option value="kids">Kids Category 🧸</option>
-                  <option value="family">Family 👨‍👩‍👧‍👦</option>
-                  <option value="health">Health Category 🍏</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Milestone Dates -->
-            <div class="details-card">
-              <h2>Milestone Dates</h2>
-              <div class="form-group-row">
-                <label for="date-added-input">Date Added</label>
-                <input type="date" id="date-added-input">
-              </div>
-              <div class="form-group-row">
-                <label for="date-watched-input">Date Watched</label>
-                <input type="date" id="date-watched-input">
-              </div>
-              <div class="form-group-row">
-                <label for="date-complete-input">Date Completed</label>
-                <input type="date" id="date-complete-input">
-              </div>
-            </div>
-
-            <!-- History of dates watched & Who watched -->
-            <div class="details-card history-card">
-              <h2>Watch Session Log</h2>
-              <p class="section-desc">Record who watched this video and when.</p>
-              
-              <div class="history-list" id="history-log-list">
-                <!-- Log rows filled dynamically -->
-                <div class="empty-history-text">No watch sessions logged yet.</div>
-              </div>
-
-              <div class="add-history-form">
-                <input type="date" id="new-history-date">
-                <input type="text" id="new-history-viewer" placeholder="Who watched? (e.g. Self, Kids)">
-                <button id="add-history-log-btn" class="btn-small btn-success">+ Add Log</button>
-              </div>
+      <!-- VIEW 5: Global Search View Panel -->
+      <div id="view-search" class="view-panel" style="display: none;">
+        <div class="view-header">
+          <h2>🔍 Global Search Explorer</h2>
+          <p>Deep-search across video titles, tags, and all nested notes.</p>
+        </div>
+        <div class="global-search-container">
+          <div class="global-search-inputs">
+            <input type="text" id="gsearch-input" placeholder="Search keywords in notes, titles, or tags...">
+            <div class="gsearch-filters">
+              <select id="gsearch-niche-select">
+                <option value="all">All Niches</option>
+                <option value="uncategorized">General</option>
+                <option value="urgent">Urgent</option>
+                <option value="money">Make Money</option>
+                <option value="relax">Relax</option>
+                <option value="kids">Kids</option>
+                <option value="family">Family</option>
+                <option value="health">Health</option>
+              </select>
+              <select id="gsearch-priority-select">
+                <option value="all">All Priorities</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+                <option value="uncategorized">Uncategorized</option>
+              </select>
             </div>
           </div>
-        </section>
-
-        <!-- Tab 3: Calendar View -->
-        <section class="tab-content" id="tab-calendar">
-          <div class="calendar-container">
-            <header class="calendar-header">
-              <button id="calendar-prev-month">◀</button>
-              <h2 id="calendar-month-year">May 2026</h2>
-              <button id="calendar-next-month">▶</button>
-            </header>
-            <div class="calendar-days-header">
-              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-            </div>
-            <div class="calendar-grid" id="calendar-grid">
-              <!-- Rendered dynamically -->
-            </div>
-            <div class="calendar-legend">
-              <span class="legend-item"><span class="dot dot-added"></span> Added</span>
-              <span class="legend-item"><span class="dot dot-watched"></span> Watched</span>
-              <span class="legend-item"><span class="dot dot-completed"></span> Completed</span>
-            </div>
-            <!-- Calendar Detail panel -->
-            <div class="calendar-events-today" id="calendar-day-details">
-              <h3>Select a date to view scheduling milestones</h3>
-              <div id="day-events-list"></div>
-            </div>
+          <div class="gsearch-results" id="gsearch-results-list">
+            <!-- Results populate here -->
+            <div class="empty-state">Enter a search query to explore details.</div>
           </div>
-        </section>
-
-        <!-- Tab 4: Analytics Insights -->
-        <section class="tab-content" id="tab-insights">
-          <div class="insights-grid">
-            <div class="insights-card progress-card">
-              <h2>Watch Completion</h2>
-              <div class="progress-ring-container">
-                <svg class="progress-ring" width="120" height="120">
-                  <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                  <circle class="progress-ring-circle" id="insights-progress-circle" stroke="#818cf8" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
-                </svg>
-                <div class="progress-ring-text">
-                  <span id="insights-progress-percent">0%</span>
-                  <span class="subtext">Completed</span>
-                </div>
-              </div>
-              <div class="simple-stats">
-                <div class="stat-row">
-                  <span>Completed:</span>
-                  <strong id="insights-num-completed">0</strong>
-                </div>
-                <div class="stat-row">
-                  <span>In Progress (Watched):</span>
-                  <strong id="insights-num-watched">0</strong>
-                </div>
-                <div class="stat-row">
-                  <span>To Watch (Added):</span>
-                  <strong id="insights-num-added">0</strong>
-                </div>
-              </div>
-            </div>
-
-            <div class="insights-card">
-              <h2>Niche / Categories</h2>
-              <div class="bar-chart-container" id="insights-categories-chart">
-                <!-- Programmatic bars -->
-              </div>
-            </div>
-
-            <div class="insights-card">
-              <h2>Timeframe Allocations</h2>
-              <div class="bar-chart-container" id="insights-timeframes-chart">
-                <!-- Programmatic bars -->
-              </div>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     </main>
   </div>
